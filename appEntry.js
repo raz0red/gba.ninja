@@ -12,7 +12,7 @@ var isPaused = false;
 
 window.init = function () {
 
-    document.querySelector(".pixels").innerHTML = '<canvas width="240" height="160"></canvas>';
+    //document.querySelector(".pixels").innerHTML = '<canvas width="240" height="160"></canvas>';
 
     window.vbaGraphics = new VBAGraphics(window.gbaninja, document.querySelector("canvas"));
     var res = window.vbaGraphics.initScreen();
@@ -20,11 +20,10 @@ window.init = function () {
     if (!res) {
         window.vbaGraphics = null;
         document.querySelector(".pixels").innerHTML = "<p style='margin: 20px;'>You need to enable WebGL</p>";
-        gtag("event", "webgl_disabled_at_init_1", {});
         return;
     }
     
-    window.vbaGraphics.drawFrame();
+    //window.vbaGraphics.drawFrame();
 
     window.vbaSound = new VBASound(window.gbaninja);
     window.vbaSaves = new VBASaves(window.gbaninja);
@@ -51,7 +50,6 @@ window.start = function () {
     
     if (!window.vbaGraphics) {
         // webgl is disabled
-        gtag("event", "webgl_disabled_at_start_1", {});
         return;
     }
     
@@ -64,16 +62,10 @@ window.start = function () {
 
     VBAInterface.VBA_start();
 
-    gtag("event", "run_rom_1", {
-        event_label: window.vbaSaves.getRomCode() + " " + require("./romCodeToEnglish")(window.vbaSaves.getRomCode()),
-    });
-
     isRunning = true;    
     window.focusCheck();
     window.doTimestep(window.frameNum + 1);
     
-    
-
 };
 
 var GBA_CYCLES_PER_SECOND = 16777216;
@@ -131,11 +123,14 @@ window.doTimestep = function (frameNum, mustRender) {
         vbaPerf.deltaTimesThisSecond.push(deltaTime);
         vbaPerf.cyclesThisSecond.push(cyclesToDo);
         
-        clearTimeout(window.frameTimeout);
-        window.frameTimeout = setTimeout(function () {
-            window.doTimestep(frameNum + 1);
-        }, 1000 / TARGET_FRAMERATE);
-        cancelAnimationFrame(window.animationFrameRequest);
+        // clearTimeout(window.frameTimeout);
+        // window.frameTimeout = setTimeout(function () {
+        //     console.log('frameTimeout...');
+        //     window.doTimestep(frameNum + 1);
+        // }, 1000 / TARGET_FRAMERATE);
+        // cancelAnimationFrame(window.animationFrameRequest);
+
+        // Why such a quick frame timeout? seems to work fine w/ animation frame only
         window.animationFrameRequest = window.requestAnimationFrame(function () {
             window.doTimestep(frameNum + 1);
         });

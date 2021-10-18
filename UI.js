@@ -88,10 +88,6 @@
             vbaInput.setBinding(this.currentlyBinding, e.code, e.keyCode);
             var current = vbaInput.bindings[this.currentlyBinding].codes.join();
             
-            gtag("event", "rebind_key_1", {
-                event_label: "Change " + this.currentlyBinding + " from " + prev + " to " + current,
-            });
-
             this.reset();
         }
     };
@@ -107,8 +103,6 @@
     
     VBAUI.prototype.resetBindings = function () {
         
-        gtag("event", "reset_bindings_1", {});
-
         vbaInput.resetBindings();
         this.reset();
     };
@@ -116,10 +110,6 @@
     VBAUI.prototype.exportSave = function (romCode) {
         vbaSaves.exportSave(romCode);
         this.reset();
-
-        gtag("event", "export_save_1", {
-            event_label: romCode + " " + require("./romCodeToEnglish")(romCode),
-        });
 
     };
     
@@ -132,9 +122,6 @@
                 
                 vbaSaves.deleteSave(romCode);
                 this.reset();
-                gtag("event", "delete_save_1", {
-                    event_label: romCode + " " + require("./romCodeToEnglish")(romCode),
-                });
 
             }.bind(this),
             rightButtonText: "Cancel",

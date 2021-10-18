@@ -15,6 +15,7 @@
         this.audioSpareWritePtr = 0;
         this.audioSpareReadPtr = 0;
         this.spareSamplesAtLastEvent = 0;
+console.log("#### " + this.audioCtx.sampleRate);        
 
     }
     VBASound.prototype = Object.create(Object.prototype);
@@ -37,7 +38,6 @@
     };
 
     VBASound.prototype.writeSound = function (pointer8, length16) {
-
         if (pointer8 % 2 === 1) {
             console.error("Audio pointer must be 16 bit aligned.");
             return;

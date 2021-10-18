@@ -5,8 +5,8 @@ var webpack = require("webpack");
 module.exports = {
     entry: {
         app: "./appEntry.js",
-        emu: "./emuEntry.js",
-        sw: "./sw.js",
+        emu: "./emuEntry.js"/*,
+        sw: "./sw.js",*/
     },
     output: {
         path: path.join(__dirname, "build"),
