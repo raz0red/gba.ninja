@@ -370,6 +370,7 @@ ENTRY_FN VBA_start(int inFlashSize, int inSaveType, int inRtc, int inMirroring) 
 
     doMirroring(mirroringEnable);
 
+    soundSetVolume(0.5f);
     soundSetSampleRate(
         EM_ASM_INT({return window["VBAInterface"]["getAudioSampleRate"]()}, 0));    
     soundInit();
