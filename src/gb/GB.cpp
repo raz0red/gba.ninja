@@ -8,7 +8,9 @@
 #include "../System.h"
 #include "../NLS.h"
 #include "gb.h"
+#if 0
 #include "gbCheats.h"
+#endif
 #include "gbGlobals.h"
 #include "gbMemory.h"
 #include "gbSGB.h"
@@ -20,6 +22,8 @@
 #ifdef __GNUC__
 #define _stricmp strcasecmp
 #endif
+
+#import <emscripten.h>
 
 extern u8 *pix;
 bool gbUpdateSizes();
@@ -900,7 +904,7 @@ void gbCompareLYToLYC()
   }
 }
 
-void  gbWriteMemory(register u16 address, register u8 value)
+void  gbWriteMemory(u16 address, u8 value)
 {
 
   if(address < 0x8000) {
@@ -1788,10 +1792,12 @@ void  gbWriteMemory(register u16 address, register u8 value)
   gbMemory[address] = value;
 }
 
-u8 gbReadOpcode(register u16 address)
+u8 gbReadOpcode(u16 address)
 {
+#if 0
   if(gbCheatMap[address])
     return gbCheatRead(address);
+#endif    
 
   if(address < 0x8000)
       return gbMemoryMap[address>>12][address&0x0fff];
@@ -1953,10 +1959,12 @@ u8 gbReadOpcode(register u16 address)
   return gbMemoryMap[address>>12][address & 0x0fff];
 }
 
-u8 gbReadMemory(register u16 address)
+u8 gbReadMemory(u16 address)
 {
+#if 0
   if(gbCheatMap[address])
     return gbCheatRead(address);
+#endif    
 
 
   if(address < 0x8000)
@@ -2233,7 +2241,9 @@ u8 gbReadMemory(register u16 address)
 
 void gbVblank_interrupt()
 {
+#if 0
   gbCheatWrite(false); // Emulates GS codes.
+#endif  
   gbMemory[0xff0f] = register_IF &= 0xfe;
   gbWriteMemory(--SP.W, PC.B.B1);
   gbWriteMemory(--SP.W, PC.B.B0);
@@ -2242,7 +2252,9 @@ void gbVblank_interrupt()
 
 void gbLcd_interrupt()
 {
+#if 0  
   gbCheatWrite(false); // Emulates GS codes.
+#endif  
   gbMemory[0xff0f] = register_IF &= 0xfd;
   gbWriteMemory(--SP.W, PC.B.B1);
   gbWriteMemory(--SP.W, PC.B.B0);
@@ -2359,6 +2371,7 @@ void gbCPUInit(const char *biosFileName, bool useBiosFile)
   {
     int expectedSize = (gbHardware & 2) ? 0x900 : 0x100;
     int size = expectedSize;
+#if 0    
     if(utilLoad(biosFileName,
                 CPUIsGBBios,
                 bios,
@@ -2368,6 +2381,7 @@ void gbCPUInit(const char *biosFileName, bool useBiosFile)
       else
         systemMessage(MSG_INVALID_BIOS_FILE_SIZE, N_("Invalid BOOTROM file size"));
     }
+#endif
   }
 }
 
@@ -3060,10 +3074,13 @@ void gbReset()
   gbScreenOn = true;
   gbSystemMessage = false;
 
+#if 0
   gbCheatWrite(true); // Emulates GS codes.
+#endif  
 
 }
 
+#if 0
 void gbWriteSaveMBC1(const char * name)
 {
   if (gbRam)
@@ -3577,6 +3594,7 @@ bool gbReadSaveMMM01(const char * name)
   else
     return false;
 }
+#endif
 
 void gbInit()
 {
@@ -3590,6 +3608,7 @@ void gbInit()
   gbLineBuffer = (u16 *)malloc(160 * sizeof(u16));
 }
 
+#if 0
 bool gbWriteBatteryFile(const char *file, bool extendedSave)
 {
   if(gbBattery) {
@@ -4374,6 +4393,7 @@ bool gbWriteBMPFile(const char *fileName)
     return utilWriteBMPFile(fileName, 256, 224, pix);
   return utilWriteBMPFile(fileName, 160, 144, pix);
 }
+#endif
 
 void gbCleanUp()
 {
@@ -4839,16 +4859,17 @@ void gbDrawLine()
   }
 }
 
-void gbEmulate(int ticksToStop)
-{
+void gbEmulate(int ticksToStop) {
+    ticksToStop >>= gbSpeed ? 1 : 2;
+
   gbRegister tempRegister;
   u8 tempValue;
   s8 offset;
 
   clockTicks = 0;
   gbDmaTicks = 0;
-
-  register int opcode = 0;
+ 
+  int opcode = 0;
 
   int opcode1 = 0;
   int opcode2 = 0;
@@ -5823,21 +5844,21 @@ struct EmulatedSystem GBSystem = {
   // emuCleanUp
   gbCleanUp,
   // emuReadBattery
-  gbReadBatteryFile,
+    NULL,  // gbReadBatteryFile,
   // emuWriteBattery
-  gbWriteBatteryFile,
+    NULL,  // gbWriteBatteryFile,
   // emuReadState
-  gbReadSaveState,
+    NULL,  // gbReadSaveState,
   // emuWriteState
-  gbWriteSaveState,
+    NULL,  // gbWriteSaveState,
   // emuReadMemState
-  gbReadMemSaveState,
+    NULL,  // gbReadMemSaveState,
   // emuWriteMemState
-  gbWriteMemSaveState,
+    NULL,  // gbWriteMemSaveState,
   // emuWritePNG
-  gbWritePNGFile,
+    NULL,  // gbWritePNGFile,
   // emuWriteBMP
-  gbWriteBMPFile,
+    NULL,  // gbWriteBMPFile,
   // emuUpdateCPSR
   NULL,
   // emuHasDebugger
@@ -5849,3 +5870,38 @@ struct EmulatedSystem GBSystem = {
   1000,
 #endif
 };
+
+bool gbLoadRomData(int size) {
+    //  int size = 0;
+
+    if (gbRom != NULL) {
+        gbCleanUp();
+    }
+
+    systemSaveUpdateCounter = SYSTEM_SAVE_NOT_UPDATED;
+
+    gbRom = (u8*)malloc(0x2000000);
+    EM_ASM_INT({ return window["VBAInterface"]["copyRomToMemory"]($0); },
+               (int)gbRom);
+
+    // gbRom = utilLoad(szFile,
+    //                  utilIsGBImage,
+    //                  NULL,
+    //                  size);
+
+    if (!gbRom)
+        return false;
+
+    gbRomSize = size;
+
+    gbBatteryError = false;
+
+    if (bios != NULL) {
+        free(bios);
+        bios = NULL;
+    }
+    bios = (u8*)calloc(1, 0x900);
+
+    bool result = gbUpdateSizes();
+    return result;
+}

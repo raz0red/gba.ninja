@@ -7,8 +7,10 @@ void gbSgbCommand();
 void gbSgbResetPacketState();
 void gbSgbReset();
 void gbSgbDoBitTransfer(u8);
+#if 0
 void gbSgbSaveGame(gzFile);
 void gbSgbReadGame(gzFile, int version);
+#endif
 void gbSgbRenderBorder();
 
 extern u8  gbSgbATF[20*18];

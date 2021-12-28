@@ -70,7 +70,9 @@ extern int SOUND_CLOCK_TICKS;   // Number of 16.8 MHz clocks between calls to gb
 extern int soundTicks;          // Number of 16.8 MHz clocks until gbSoundTick() will be called
 
 // Saves/loads emulator state
+#if 0
 void gbSoundSaveGame( gzFile out );
 void gbSoundReadGame( int version, gzFile in );
+#endif
 
 #endif // GBSOUND_H

@@ -37,7 +37,7 @@ u8 gbSoundRead( u16 address )
 	return gbMemory[address];
 }
 
-void gbSoundEvent(register u16 address, register int data)
+void gbSoundEvent( u16 address, int data)
 {
 	gbMemory[address] = data;
 
@@ -343,6 +343,7 @@ enum {
 	nr50, nr51, nr52
 };
 
+#if 0
 static void gbSoundReadGameOld(int version,gzFile gzFile)
 {
 	if ( version == 11 )
@@ -381,6 +382,7 @@ static void gbSoundReadGameOld(int version,gzFile gzFile)
 
 	memcpy( &s.regs [0x20], &gbMemory [0xFF30], 0x10 ); // wave
 }
+#endif
 
 // New state format
 
@@ -417,6 +419,7 @@ static variable_desc gb_state [] =
 	{ NULL, 0 }
 };
 
+#if 0
 void gbSoundSaveGame( gzFile out )
 {
 	gb_apu->save_state( &state.apu );
@@ -441,3 +444,4 @@ void gbSoundReadGame( int version, gzFile in )
 
 	gb_apu->load_state( state.apu );
 }
+#endif

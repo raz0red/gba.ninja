@@ -49,7 +49,8 @@ void systemMessage(int _iId, const char * _csFormat, ...)
   va_list args;
   va_start(args, _csFormat);
 
-  GUI()->vPopupErrorV(_(_csFormat), args);
+  //GUI()->vPopupErrorV(_(_csFormat), args);
+  vprintf( _csFormat, args );
 
   va_end(args);
 }

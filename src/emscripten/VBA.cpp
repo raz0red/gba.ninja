@@ -11,6 +11,10 @@
 #import "../gba/agbprint.h"
 #import "EmscriptenSoundDriver.h"
 
+#import "../gb/gb.h"
+#import "../gb/gbGlobals.h"
+#import "../gb/gbSound.h"
+
 #define ENTRY_FN extern "C" int EMSCRIPTEN_KEEPALIVE
 
 bool enableRtc;
@@ -339,50 +343,87 @@ int emulating = 0;
 struct EmulatedSystem emulator = {NULL, NULL, NULL, NULL, NULL, NULL,  NULL,
                                   NULL, NULL, NULL, NULL, NULL, false, 0};
 
-ENTRY_FN VBA_start(int inFlashSize, int inSaveType, int inRtc, int inMirroring) {
+extern bool gbUpdateSizes();
+
+ENTRY_FN VBA_start(int isGba,
+                   int inFlashSize,
+                   int inSaveType,
+                   int inRtc,
+                   int inMirroring) {
     cpuSaveType = inSaveType >= 0 ? inSaveType : 0;
     flashSize = inFlashSize >= 0 ? inFlashSize : 0x10000;
     enableRtc = inRtc == 1 ? true : false;
-    mirroringEnable = inMirroring == 1 ? true : false;    
+    mirroringEnable = inMirroring == 1 ? true : false;
 
     // Misc setup
     dbgOutput = _dbgOutput;
-    utilUpdateSystemColorMaps(false);    
+    utilUpdateSystemColorMaps(false);
     agbPrintEnable(true);
 
-    int size = CPULoadRomData(
-        NULL, EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()}, 0));
+    if (isGba) {
+        int size = CPULoadRomData(
+            NULL, EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()}, 0));
 
-    if (cpuSaveType == 0)
-        utilGBAFindSave(size);
-    else
-        saveType = cpuSaveType;
+        if (cpuSaveType == 0)
+            utilGBAFindSave(size);
+        else
+            saveType = cpuSaveType;
 
-   load_image_preferences();
+        load_image_preferences();
 
-   if(flashSize == 0x10000 || flashSize == 0x20000) {
-       printf("## setting flash size! : %d\n", flashSize);
-      flashSetSize(flashSize);
-   }
+        if (flashSize == 0x10000 || flashSize == 0x20000) {
+            printf("## setting flash size! : %d\n", flashSize);
+            flashSetSize(flashSize);
+        }
 
-   if(enableRtc)
-      rtcEnable(enableRtc);
+        if (enableRtc)
+            rtcEnable(enableRtc);
 
-    doMirroring(mirroringEnable);
+        doMirroring(mirroringEnable);
+    } else {
+        for (int i = 0; i < 24;) {
+            systemGbPalette[i++] = (0x1f) | (0x1f << 5) | (0x1f << 10);
+            systemGbPalette[i++] = (0x15) | (0x15 << 5) | (0x15 << 10);
+            systemGbPalette[i++] = (0x0c) | (0x0c << 5) | (0x0c << 10);
+            systemGbPalette[i++] = 0;
+        }
+
+        // TODO: Make configurable
+        gbEmulatorType = 0; // Auto
+        //gbEmulatorType = 1; // GBC
+        //gbEmulatorType = 2; // SGB
+        //gbEmulatorType = 3; // GB
+        //gbEmulatorType = 4; // GBA
+        //gbEmulatorType = 5; // SGB2
+
+        int size = EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()});
+        gbLoadRomData(size);
+        gbGetHardwareType();
+        emulator = GBSystem;
+    }
 
     soundSetVolume(0.5f);
     soundSetSampleRate(
-        EM_ASM_INT({return window["VBAInterface"]["getAudioSampleRate"]()}, 0));    
+        EM_ASM_INT({return window["VBAInterface"]["getAudioSampleRate"]()}, 0));
+    if (!isGba) {
+        gbSoundSetSampleRate(
+            EM_ASM_INT({return window["VBAInterface"]["getAudioSampleRate"]()}, 0));
+    }
     soundInit();
 
-    emulator = GBASystem;
-    emulator.emuReadBattery("");    
-
-    CPUInit(0, useBios);
-    CPUReset();
+    if (isGba) {
+        emulator = GBASystem;
+        emulator.emuReadBattery("");
+        CPUInit(0, useBios);
+        CPUReset();
+    } else {
+        if (gbHardware & 7)
+            gbCPUInit(0, useBios);
+        gbReset();
+        systemFrameSkip = 0;
+    }
 
     emulating = 1;
-
     return 1;
 }
 

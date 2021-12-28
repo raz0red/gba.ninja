@@ -45,7 +45,15 @@
         "./src/gba/Sram.cpp",
         "./src/gba/ereader.cpp",
         "./src/gba/agbprint.cpp",
-        
+
+        // GB Files
+        "./src/gb/GB.cpp",
+        "./src/gb/gbDis.cpp",
+        "./src/gb/gbGfx.cpp",
+        "./src/gb/gbGlobals.cpp",
+        "./src/gb/gbSound.cpp",
+        "./src/gb/gbMemory.cpp",
+        "./src/gb/gbSGB.cpp",        
     ];
     
     var opt = require("yargs").argv.opt;
