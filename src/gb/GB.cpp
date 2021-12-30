@@ -5660,15 +5660,13 @@ void gbEmulate(int ticksToStop) {
 #endif
 
     soundTicks -= clockTicks;
-	if ( !gbSpeed )
-		soundTicks -= clockTicks;
+    if (!gbSpeed)
+        soundTicks -= clockTicks;
 
-    while(soundTicks < 0) {
-      soundTicks += SOUND_CLOCK_TICKS;
-
-      gbSoundTick();
+    while (soundTicks < 0) {
+        soundTicks += SOUND_CLOCK_TICKS;
+        gbSoundTick();
     }
-
 
     // timer emulation
 

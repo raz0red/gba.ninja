@@ -137,6 +137,18 @@ static const ini_t gbaover[256] = {
 			{"Zoku Bokura no Taiyou - Taiyou Shounen Django (Japan)",		"U32J",	0,	0,	1,	0,	0}
 };
 
+static u16 defaultPalettes[][24] = {
+  { 0x7FFF, 0x56B5, 0x318C, 0x0000,  0x7FFF, 0x56B5, 0x318C, 0x0000, },
+  { 0x6200, 0x7E10, 0x7C10, 0x5000,  0x6200, 0x7E10, 0x7C10, 0x5000, },
+  { 0x4008, 0x4000, 0x2000, 0x2008,  0x4008, 0x4000, 0x2000, 0x2008, },
+  { 0x43F0, 0x03E0, 0x4200, 0x2200,  0x43F0, 0x03E0, 0x4200, 0x2200, },
+  { 0x43FF, 0x03FF, 0x221F, 0x021F,  0x43FF, 0x03FF, 0x221F, 0x021F, },
+  { 0x621F, 0x7E1F, 0x7C1F, 0x2010,  0x621F, 0x7E1F, 0x7C1F, 0x2010, },
+  { 0x621F, 0x401F, 0x001F, 0x2010,  0x621F, 0x401F, 0x001F, 0x2010, },
+  { 0x1B8E, 0x02C0, 0x0DA0, 0x1140,  0x1B8E, 0x02C0, 0x0DA0, 0x1140, },
+  { 0x7BDE, /*0x23F0*/ 0x5778, /*0x5DC0*/ 0x5640, 0x0000,  0x7BDE, /*0x3678*/ 0x529C, /*0x0980*/ 0x2990, 0x0000, }
+};
+
 void log(const char* format, ...) {
     // EM_ASM(debugger;);
     va_list argptr;
@@ -344,12 +356,16 @@ struct EmulatedSystem emulator = {NULL, NULL, NULL, NULL, NULL, NULL,  NULL,
                                   NULL, NULL, NULL, NULL, NULL, false, 0};
 
 extern bool gbUpdateSizes();
+extern int gbBattery;
+extern bool gbBatteryError;
 
 ENTRY_FN VBA_start(int isGba,
                    int inFlashSize,
                    int inSaveType,
                    int inRtc,
-                   int inMirroring) {
+                   int inMirroring,
+                   int gbHwType,
+                   int gbColors) {
     cpuSaveType = inSaveType >= 0 ? inSaveType : 0;
     flashSize = inFlashSize >= 0 ? inFlashSize : 0x10000;
     enableRtc = inRtc == 1 ? true : false;
@@ -381,20 +397,21 @@ ENTRY_FN VBA_start(int isGba,
 
         doMirroring(mirroringEnable);
     } else {
-        for (int i = 0; i < 24;) {
+        for (int i = 0; i < 8;) {
             systemGbPalette[i++] = (0x1f) | (0x1f << 5) | (0x1f << 10);
             systemGbPalette[i++] = (0x15) | (0x15 << 5) | (0x15 << 10);
             systemGbPalette[i++] = (0x0c) | (0x0c << 5) | (0x0c << 10);
             systemGbPalette[i++] = 0;
         }
 
-        // TODO: Make configurable
-        gbEmulatorType = 0; // Auto
-        //gbEmulatorType = 1; // GBC
-        //gbEmulatorType = 2; // SGB
-        //gbEmulatorType = 3; // GB
-        //gbEmulatorType = 4; // GBA
-        //gbEmulatorType = 5; // SGB2
+        if (gbColors > 0 && gbColors <= 8) {
+            for (int i =  0; i < 8; i++) {
+                systemGbPalette[i] = defaultPalettes[gbColors][i];
+            }
+        }
+
+        gbEmulatorType = gbHwType; 
+        printf("Hardware type: %d\n", gbEmulatorType);
 
         int size = EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()});
         gbLoadRomData(size);
@@ -417,6 +434,8 @@ ENTRY_FN VBA_start(int isGba,
         CPUInit(0, useBios);
         CPUReset();
     } else {
+        printf("GB battery=%d\n", gbBattery);
+
         if (gbHardware & 7)
             gbCPUInit(0, useBios);
         gbReset();
