@@ -63,7 +63,7 @@
     var options = [
         "--memory-init-file 0",
         "-Werror",
-        opt ? "--closure 1" : "",
+        /*opt ? "--closure 1" : "",*/
         opt ? "-O3" : "-g3",
         "-DC_CORE",
         "-DNO_PNG",
@@ -78,6 +78,7 @@
         // "-s NO_FILESYSTEM=1",
         "-s NO_EXIT_RUNTIME=1",
         "-s EXPORTED_FUNCTIONS=\"['ccall']\"",
+        "-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS']",
         "-s TOTAL_MEMORY=" + (80 * MB),
     ].filter(function (v) {return v;}).join(" ");
     
@@ -87,7 +88,7 @@
         require("fs").writeFileSync(file, str);
     }
 
-    let command = `emcc ${options} ${files.join(" ")} -o ./build/emu.js`;
+    let command = `emcc ${options} ${files.join(" ")} -lz -o ./build/emu.js`;
     console.log(command);
     require("child_process").execSync(command);
     fix("./build/emu.js");

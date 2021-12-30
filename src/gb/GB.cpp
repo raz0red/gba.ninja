@@ -18,6 +18,7 @@
 #include "../Util.h"
 #include "../gba/GBALink.h"
 #include "../common/ConfigManager.h"
+#include "zlib.h"
 
 #ifdef __GNUC__
 #define _stricmp strcasecmp
@@ -3080,7 +3081,6 @@ void gbReset()
 
 }
 
-#if 0
 void gbWriteSaveMBC1(const char * name)
 {
   if (gbRam)
@@ -3594,7 +3594,6 @@ bool gbReadSaveMMM01(const char * name)
   else
     return false;
 }
-#endif
 
 void gbInit()
 {
@@ -3608,9 +3607,14 @@ void gbInit()
   gbLineBuffer = (u16 *)malloc(160 * sizeof(u16));
 }
 
-#if 0
+// emscripten
+#define SRAM_FILE "/tmp/game.srm"
+
 bool gbWriteBatteryFile(const char *file, bool extendedSave)
 {
+  // emscripten
+  file = SRAM_FILE;
+
   if(gbBattery) {
     switch(gbRomType) {
     case 0x03:
@@ -3650,6 +3654,7 @@ bool gbWriteBatteryFile(const char *file, bool extendedSave)
 
 bool gbWriteBatteryFile(const char *file)
 {
+  file = SRAM_FILE;
   if (!gbBatteryError)
   {
     gbWriteBatteryFile(file, true);
@@ -3660,6 +3665,8 @@ bool gbWriteBatteryFile(const char *file)
 
 bool gbReadBatteryFile(const char *file)
 {
+  file = SRAM_FILE;
+
   bool res = false;
   if(gbBattery) {
     switch(gbRomType) {
@@ -3748,6 +3755,7 @@ bool gbReadBatteryFile(const char *file)
   return res;
 }
 
+#if 0
 bool gbReadGSASnapshot(const char *fileName)
 {
   FILE *file = fopen(fileName, "rb");
@@ -5842,9 +5850,9 @@ struct EmulatedSystem GBSystem = {
   // emuCleanUp
   gbCleanUp,
   // emuReadBattery
-    NULL,  // gbReadBatteryFile,
+  gbReadBatteryFile,
   // emuWriteBattery
-    NULL,  // gbWriteBatteryFile,
+  gbWriteBatteryFile,
   // emuReadState
     NULL,  // gbReadSaveState,
   // emuWriteState

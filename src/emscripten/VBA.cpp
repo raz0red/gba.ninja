@@ -419,7 +419,7 @@ ENTRY_FN VBA_start(int isGba,
         emulator = GBSystem;
     }
 
-    soundSetVolume(0.5f);
+    soundSetVolume(0.6f);
     soundSetSampleRate(
         EM_ASM_INT({return window["VBAInterface"]["getAudioSampleRate"]()}, 0));
     if (!isGba) {
@@ -435,7 +435,7 @@ ENTRY_FN VBA_start(int isGba,
         CPUReset();
     } else {
         printf("GB battery=%d\n", gbBattery);
-
+        emulator.emuReadBattery("");
         if (gbHardware & 7)
             gbCPUInit(0, useBios);
         gbReset();
