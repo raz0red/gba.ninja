@@ -303,7 +303,12 @@ void systemFrame() {
 }
 
 void systemGbBorderOn() {
-    // Don't care
+    // Total hack... but clears the screen
+    memset(pix, 0, 2 * (258 * 225));
+    EM_ASM_INT({return window["VBAInterface"]["setGbBorderOn"]()}, 0);
+    gbBorderLineSkip = 256;
+    gbBorderColumnSkip = 48;
+    gbBorderRowSkip = 40;
 }
 
 void Sm60FPS_Init() {
@@ -365,7 +370,8 @@ ENTRY_FN VBA_start(int isGba,
                    int inRtc,
                    int inMirroring,
                    int gbHwType,
-                   int gbColors) {
+                   int gbColors,
+                   int gbBorder) {
     cpuSaveType = inSaveType >= 0 ? inSaveType : 0;
     flashSize = inFlashSize >= 0 ? inFlashSize : 0x10000;
     enableRtc = inRtc == 1 ? true : false;
@@ -397,6 +403,17 @@ ENTRY_FN VBA_start(int isGba,
 
         doMirroring(mirroringEnable);
     } else {
+        if (gbBorder == 2) {
+            gbBorderAutomatic = 1;
+        } else if (gbBorder == 1) {
+            gbBorderLineSkip = 256;
+            gbBorderColumnSkip = 48;
+            gbBorderRowSkip = 40;
+            gbBorderOn = 1;
+        } else {
+            gbBorderOn = 0;
+        }
+
         for (int i = 0; i < 8;) {
             systemGbPalette[i++] = (0x1f) | (0x1f << 5) | (0x1f << 10);
             systemGbPalette[i++] = (0x15) | (0x15 << 5) | (0x15 << 10);
