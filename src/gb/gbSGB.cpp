@@ -216,8 +216,6 @@ void gbSgbDrawBorderTile(int x, int y, int tile, int attr)
     u8 b = *tileAddress++;
     u8 c = *tileAddress2++;
     u8 d = *tileAddress2++;
-
-
  
     u8 yyy;
     if(!flipY)

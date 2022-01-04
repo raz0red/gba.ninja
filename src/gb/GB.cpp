@@ -4761,6 +4761,9 @@ void gbDrawLine()
   switch(systemColorDepth) {
     case 16:
     {
+      // Emscripten: Not sure why this is necessary, but overlaps by one line. :-(
+      if (gbBorderOn && register_LY > 143) break;
+
       u16 * dest = (u16 *)pix +
                    (gbBorderLineSkip+2) * (register_LY + gbBorderRowSkip+1)
                    + gbBorderColumnSkip;
