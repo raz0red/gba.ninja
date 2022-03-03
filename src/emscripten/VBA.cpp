@@ -88,6 +88,8 @@ static const ini_t gbaover[256] = {
 			{"Golden Sun (USA)",							"AGSE",	65536,	0,	0,	1,	0},
 			{"Koro Koro Puzzle - Happy Panechu! (Japan)",				"KHPJ",	0,	4,	0,	0,	0},
 			{"Mario vs. Donkey Kong (Europe)",					"BM5P",	0,	3,	0,	0,	0},
+            {"Onimusha Tactics (E)", "A6OP", 131072,	1,	0,	0,	0},
+            {"Onimusha Tactics (U)", "A6OE", 131072,	1,	0,	0,	0},            
 			{"Pocket Monsters - Emerald (Japan)",					"BPEJ",	131072,	0,	1,	0,	0},
 			{"Pocket Monsters - Fire Red (Japan)",					"BPRJ",	131072,	0,	0,	0,	0},
 			{"Pocket Monsters - Leaf Green (Japan)",				"BPGJ",	131072,	0,	0,	0,	0},
@@ -220,7 +222,7 @@ static void load_image_preferences(void) {
 
     if (strlen(buffer) > 0) {
         for (int i = 0; i < 256; i++) {
-            if (!strcmp(gbaover[i].romid, buffer)) {
+            if (!strcasecmp(gbaover[i].romid, buffer)) {
                 found = true;
                 found_no = i;
                 break;
@@ -436,14 +438,16 @@ ENTRY_FN VBA_start(int isGba,
             NULL, EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()}, 0));
 
         if (cpuSaveType == 0)
-            utilGBAFindSave(size);
-        else
-            saveType = cpuSaveType;
+            utilGBAFindSave(size);        
 
         load_image_preferences();
 
+        saveType = cpuSaveType;
+
+        printf("## save type : %d\n", saveType);
+
         if (flashSize == 0x10000 || flashSize == 0x20000) {
-            printf("## setting flash size! : %d\n", flashSize);
+            printf("## flash size : %d\n", flashSize);
             flashSetSize(flashSize);
         }
 
