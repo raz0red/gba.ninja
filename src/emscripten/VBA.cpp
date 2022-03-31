@@ -436,13 +436,17 @@ ENTRY_FN VBA_start(int isGba,
     if (isGba) {
         int size = CPULoadRomData(
             NULL, EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()}, 0));
+        
 
         if (cpuSaveType == 0)
-            utilGBAFindSave(size);        
+            utilGBAFindSave(size);
+        else
+            saveType = cpuSaveType;
 
+        cpuSaveType = 0; // reset prior to image prefs
         load_image_preferences();
-
-        saveType = cpuSaveType;
+        if (cpuSaveType != 0) // if set in image prefs, use it
+            saveType = cpuSaveType;
 
         printf("## save type : %d\n", saveType);
 
