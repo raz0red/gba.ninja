@@ -89,7 +89,7 @@ static const ini_t gbaover[256] = {
 			{"Koro Koro Puzzle - Happy Panechu! (Japan)",				"KHPJ",	0,	4,	0,	0,	0},
 			{"Mario vs. Donkey Kong (Europe)",					"BM5P",	0,	3,	0,	0,	0},
             {"Onimusha Tactics (E)", "A6OP", 131072,	1,	0,	0,	0},
-            {"Onimusha Tactics (U)", "A6OE", 131072,	1,	0,	0,	0},            
+            {"Onimusha Tactics (U)", "A6OE", 131072,	1,	0,	0,	0},
 			{"Pocket Monsters - Emerald (Japan)",					"BPEJ",	131072,	0,	1,	0,	0},
 			{"Pocket Monsters - Fire Red (Japan)",					"BPRJ",	131072,	0,	0,	0,	0},
 			{"Pocket Monsters - Leaf Green (Japan)",				"BPGJ",	131072,	0,	0,	0,	0},
@@ -153,15 +153,15 @@ static u16 grayPalettes[][8] = {
 
 static u16 greenPalettes[][8] = {
     { 0x1B8E, 0x02C0, 0x0DA0, 0x1140, 0x1B8E, 0x02C0, 0x0DA0, 0x1140 },
-    { 0x6ffd, 0x4b55, 0x3a2a, 0x1cc3, 0x6ffd, 0x4b55, 0x3a2a, 0x1cc3 },  
+    { 0x6ffd, 0x4b55, 0x3a2a, 0x1cc3, 0x6ffd, 0x4b55, 0x3a2a, 0x1cc3 },
     { 0x4fdb, 0x1b0e, 0xa08, 0x40, 0x4fdb, 0x1b0e, 0xa08, 0x40 },           // 3-H
     { 0x6d2, 0x690, 0x1565, 0x4c1, 0x6d2, 0x690, 0x1565, 0x4c1 },
     { 0x3ec0, 0x3640, 0x2180, 0x1d20, 0x3ec0, 0x3640, 0x2180, 0x1d20 },
     { 0x63de, 0x2af6, 0x1e0f, 0x1127, 0x63de, 0x2af6, 0x1e0f, 0x1127 },     // 4-H
 
-    // { 0x6ffd, 0x4b55, 0x3a2a, 0x1ce3, 0x6ffd, 0x4b55, 0x3a2a, 0x1ce3 }, 
-    // { 0x713, 0x6d1, 0x1986, 0x501, 0x713, 0x6d1, 0x1986, 0x501 },       
-    // { 0x42e0, 0x3a60, 0x25a0, 0x1d40, 0x42e0, 0x3a60, 0x25a0, 0x1d40 }, 
+    // { 0x6ffd, 0x4b55, 0x3a2a, 0x1ce3, 0x6ffd, 0x4b55, 0x3a2a, 0x1ce3 },
+    // { 0x713, 0x6d1, 0x1986, 0x501, 0x713, 0x6d1, 0x1986, 0x501 },
+    // { 0x42e0, 0x3a60, 0x25a0, 0x1d40, 0x42e0, 0x3a60, 0x25a0, 0x1d40 },
 };
 
 static u16 superGbPalettes[][8] = {
@@ -194,7 +194,7 @@ static u16 superGbPalettes[][8] = {
     { 0x6f7e, 0x667a, 0x6e52, 0x0, 0x6f7e, 0x667a, 0x6e52, 0x0 },         // 4-C
     { 0x5bde, 0x6311, 0x3988, 0x2060, 0x5bde, 0x6311, 0x3988, 0x2060 },   // 4-D
     { 0x535e, 0x3a9b, 0x414e, 0x1460, 0x535e, 0x3a9b, 0x414e, 0x1460 },   // 4-E
-    { 0x6736, 0x69fa, 0x4c0f, 0x6, 0x6736, 0x69fa, 0x4c0f, 0x6 },         // 4-F  
+    { 0x6736, 0x69fa, 0x4c0f, 0x6, 0x6736, 0x69fa, 0x4c0f, 0x6 },         // 4-F
     { 0xb75, 0x2876, 0x24, 0x2de0, 0xb75, 0x2876, 0x24, 0x2de0 },         // 4-G
     { 0x63de, 0x2af6, 0x1e0f, 0x1127, 0x63de, 0x2af6, 0x1e0f, 0x1127 },   // 4-H
 };
@@ -422,11 +422,15 @@ ENTRY_FN VBA_start(int isGba,
                    int gbHwType,
                    int gbColors,
                    int gbPalette,
-                   int gbBorder) {
+                   int gbBorder,
+                   int disableLookup) {
     cpuSaveType = inSaveType >= 0 ? inSaveType : 0;
     flashSize = inFlashSize >= 0 ? inFlashSize : 0x10000;
     enableRtc = inRtc == 1 ? true : false;
     mirroringEnable = inMirroring == 1 ? true : false;
+    disableLookup = disableLookup == 1 ? true : false;
+
+    printf("##### disableLookup: %d\n", disableLookup);
 
     // Misc setup
     dbgOutput = _dbgOutput;
@@ -436,7 +440,7 @@ ENTRY_FN VBA_start(int isGba,
     if (isGba) {
         int size = CPULoadRomData(
             NULL, EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()}, 0));
-        
+
 
         if (cpuSaveType == 0)
             utilGBAFindSave(size);
@@ -444,7 +448,9 @@ ENTRY_FN VBA_start(int isGba,
             saveType = cpuSaveType;
 
         cpuSaveType = 0; // reset prior to image prefs
-        load_image_preferences();
+
+        if (!disableLookup) load_image_preferences();
+
         if (cpuSaveType != 0) // if set in image prefs, use it
             saveType = cpuSaveType;
 
@@ -481,7 +487,7 @@ ENTRY_FN VBA_start(int isGba,
         u16 (*palettes)[8] = grayPalettes;
         long paletteCount = sizeof(grayPalettes) / (sizeof(u16)*8);
         if (gbColors == 1) {
-            palettes = greenPalettes; 
+            palettes = greenPalettes;
             paletteCount = sizeof(greenPalettes) / (sizeof(u16)*8);
         } else if (gbColors == 2) {
             palettes = superGbPalettes;
@@ -490,12 +496,12 @@ ENTRY_FN VBA_start(int isGba,
 
         printf("Palette count: %lu\n", paletteCount);
         for (int i =  0; i < 8; i++) {
-            u16* palette = (gbPalette > 0 && gbPalette < paletteCount) ? 
+            u16* palette = (gbPalette > 0 && gbPalette < paletteCount) ?
                 palettes[gbPalette] : palettes[0];
             systemGbPalette[i] = palette[i];
         }
 
-        gbEmulatorType = gbHwType; 
+        gbEmulatorType = gbHwType;
         printf("Hardware type: %d\n", gbEmulatorType);
 
         int size = EM_ASM_INT({return window["VBAInterface"]["getRomSize"]()});
