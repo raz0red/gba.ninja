@@ -1,10 +1,13 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "../Util.h"
+
+#if 0
 #include "System.h"
 #include "NLS.h"
-#include "Util.h"
 #include "gba/Flash.h"
 #include "gba/GBA.h"
 #include "gba/Globals.h"
@@ -239,6 +242,8 @@ bool utilFileExists( const char *filename )
 	}
 }
 
+#endif
+
 // Not endian safe, but VBA itself doesn't seem to care, so hey <_<
 void utilWriteIntMem(uint8_t *& data, int val)
 {
@@ -254,7 +259,7 @@ void utilWriteMem(uint8_t *& data, const void *in_data, unsigned size)
 
 void utilWriteDataMem(uint8_t *& data, variable_desc *desc)
 {
-   while (desc->address) 
+   while (desc->address)
    {
       utilWriteMem(data, desc->address, desc->size);
       desc++;

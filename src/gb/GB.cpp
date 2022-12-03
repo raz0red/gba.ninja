@@ -1005,7 +1005,7 @@ void  gbWriteMemory(u16 address, u8 value)
 	case 0x02: {
 		gbSerialOn = (value & 0x80);
 #ifndef NO_LINK
-		//trying to detect whether the game has exited multiplay mode, pokemon blue start w/ 0x7e while pocket racing start w/ 0x7c 
+		//trying to detect whether the game has exited multiplay mode, pokemon blue start w/ 0x7e while pocket racing start w/ 0x7c
 		if (EmuReseted || (gbMemory[0xff02] & 0x7c) || (value & 0x7c) || (!(value & 0x81))) {
 			LinkFirstTime = true;
 		}
@@ -1798,7 +1798,7 @@ u8 gbReadOpcode(u16 address)
 #if 0
   if(gbCheatMap[address])
     return gbCheatRead(address);
-#endif    
+#endif
 
   if(address < 0x8000)
       return gbMemoryMap[address>>12][address&0x0fff];
@@ -1965,7 +1965,7 @@ u8 gbReadMemory(u16 address)
 #if 0
   if(gbCheatMap[address])
     return gbCheatRead(address);
-#endif    
+#endif
 
 
   if(address < 0x8000)
@@ -1978,15 +1978,15 @@ u8 gbReadMemory(u16 address)
     if (
          (
            (gbHardware & 0xa) &&
-           (  
+           (
              (gbLcdModeDelayed != 3) ||
              (
                ((register_LY == 0) && (gbScreenOn == false) && (register_LCDC & 0x80)) &&
                (gbLcdLYIncrementTicksDelayed == (GBLY_INCREMENT_CLOCK_TICKS - GBLCD_MODE_2_CLOCK_TICKS))
              )
-           )  
+           )
          )
-         ||   
+         ||
          (
            (gbHardware & 0x5) &&
            (gbLcdModeDelayed != 3) &&
@@ -2244,7 +2244,7 @@ void gbVblank_interrupt()
 {
 #if 0
   gbCheatWrite(false); // Emulates GS codes.
-#endif  
+#endif
   gbMemory[0xff0f] = register_IF &= 0xfe;
   gbWriteMemory(--SP.W, PC.B.B1);
   gbWriteMemory(--SP.W, PC.B.B0);
@@ -2253,9 +2253,9 @@ void gbVblank_interrupt()
 
 void gbLcd_interrupt()
 {
-#if 0  
+#if 0
   gbCheatWrite(false); // Emulates GS codes.
-#endif  
+#endif
   gbMemory[0xff0f] = register_IF &= 0xfd;
   gbWriteMemory(--SP.W, PC.B.B1);
   gbWriteMemory(--SP.W, PC.B.B0);
@@ -2372,7 +2372,7 @@ void gbCPUInit(const char *biosFileName, bool useBiosFile)
   {
     int expectedSize = (gbHardware & 2) ? 0x900 : 0x100;
     int size = expectedSize;
-#if 0    
+#if 0
     if(utilLoad(biosFileName,
                 CPUIsGBBios,
                 bios,
@@ -2809,7 +2809,7 @@ void gbReset()
   }
   else if (gbHardware & 0xa)
   {
-    // Set compatibility mode if it is a DMG ROM. 
+    // Set compatibility mode if it is a DMG ROM.
     gbMemory[0xff6c] = 0xfe | (u8)!(gbRom[0x143] & 0x80);
   }
 
@@ -3077,7 +3077,7 @@ void gbReset()
 
 #if 0
   gbCheatWrite(true); // Emulates GS codes.
-#endif  
+#endif
 
 }
 
@@ -3755,62 +3755,6 @@ bool gbReadBatteryFile(const char *file)
   return res;
 }
 
-#if 0
-bool gbReadGSASnapshot(const char *fileName)
-{
-  FILE *file = fopen(fileName, "rb");
-
-  if(!file) {
-    systemMessage(MSG_CANNOT_OPEN_FILE, N_("Cannot open file %s"), fileName);
-    return false;
-  }
-
-  fseek(file, 0x4, SEEK_SET);
-  char buffer[16];
-  char buffer2[16];
-  fread(buffer, 1, 15, file);
-  buffer[15] = 0;
-  memcpy(buffer2, &gbRom[0x134], 15);
-  buffer2[15] = 0;
-  if(memcmp(buffer, buffer2, 15)) {
-    systemMessage(MSG_CANNOT_IMPORT_SNAPSHOT_FOR,
-                  N_("Cannot import snapshot for %s. Current game is %s"),
-                  buffer,
-                  buffer2);
-    fclose(file);
-    return false;
-  }
-  fseek(file, 0x13, SEEK_SET);
-  size_t read = 0;
-  int toRead = 0;
-  switch(gbRomType) {
-  case 0x03:
-  case 0x0f:
-  case 0x10:
-  case 0x13:
-  case 0x1b:
-  case 0x1e:
-  case 0xff:
-    read = fread(gbRam, 1, (gbRamSizeMask+1), file);
-    toRead = (gbRamSizeMask+1);
-    break;
-  case 0x06:
-  case 0x22:
-    read = fread(&gbMemory[0xa000],1,256,file);
-    toRead = 256;
-    break;
-  default:
-    systemMessage(MSG_UNSUPPORTED_SNAPSHOT_FILE,
-                  N_("Unsupported snapshot file %s"),
-                  fileName);
-    fclose(file);
-    return false;
-  }
-  fclose(file);
-  gbReset();
-  return true;
-}
-
 variable_desc gbSaveGameStruct[] = {
   { &PC.W, sizeof(u16) },
   { &SP.W, sizeof(u16) },
@@ -3892,6 +3836,520 @@ variable_desc gbSaveGameStruct[] = {
   { NULL, 0 }
 };
 
+
+extern void gbSgbSaveGame(uint8_t *& data);
+extern void gbSoundSaveGame(uint8_t *& data);
+extern void gbSgbReadGame(const uint8_t *& data, int version);
+extern void gbSoundReadGame( int version, const uint8_t *& data );
+
+bool gbReadSaveState(const u8* data, unsigned size) {
+  int version = utilReadIntMem(data);
+
+  if(version > GBSAVE_GAME_VERSION || version < 0) {
+    systemMessage(MSG_UNSUPPORTED_VB_SGM,
+                  N_("Unsupported VisualBoy save game version %d"), version);
+    return false;
+  }
+
+  u8 romname[20];
+
+  utilReadMem(romname, data, 15);
+
+  if(memcmp(&gbRom[0x134], romname, 15) != 0) {
+    systemMessage(MSG_CANNOT_LOAD_SGM_FOR,
+                  N_("Cannot load save game for %s. Playing %s"),
+                  romname, &gbRom[0x134]);
+    return false;
+  }
+
+
+  bool ub = false;
+  bool ib = false;
+
+  if (version >= 11)
+  {
+    ub = utilReadIntMem(data) ? true : false;
+    ib = utilReadIntMem(data) ? true : false;
+
+    if((ub != useBios) && (ib)) {
+      if(useBios)
+        systemMessage(MSG_SAVE_GAME_NOT_USING_BIOS,
+                      N_("Save game is not using the BIOS files"));
+      else
+        systemMessage(MSG_SAVE_GAME_USING_BIOS,
+                      N_("Save game is using the BIOS file"));
+      return false;
+    }
+  }
+
+  gbReset();
+
+  inBios = ib;
+
+  utilReadDataMem(data, gbSaveGameStruct);
+
+
+  // Correct crash when loading color gameboy save in regular gameboy type.
+  if (!gbCgbMode)
+  {
+    if(gbVram != NULL) {
+      free(gbVram);
+      gbVram = NULL;
+    }
+    if(gbWram != NULL) {
+      free(gbWram);
+      gbWram = NULL;
+    }
+  }
+  else
+  {
+    if(gbVram == NULL)
+      gbVram = (u8 *)malloc(0x4000);
+    if(gbWram == NULL)
+      gbWram = (u8 *)malloc(0x8000);
+    memset(gbVram,0,0x4000);
+    memset(gbPalette,0, 2*128);
+  }
+
+
+
+  if(version >= GBSAVE_GAME_VERSION_7) {
+    utilReadMem(&IFF, data, 2);
+  }
+
+  if(gbSgbMode) {
+    gbSgbReadGame(data, version);
+  } else {
+    gbSgbMask = 0; // loading a game at the wrong time causes no display
+  }
+  if (version<11)
+    utilReadMem(&gbDataMBC1, data, sizeof(gbDataMBC1) - sizeof(int));
+  else
+    utilReadMem(&gbDataMBC1, data, sizeof(gbDataMBC1));
+  utilReadMem(&gbDataMBC2, data, sizeof(gbDataMBC2));
+  if(version < GBSAVE_GAME_VERSION_4)
+    // prior to version 4, there was no adjustment for the time the game
+    // was last played, so we have less to read. This needs update if the
+    // structure changes again.
+    utilReadMem(&gbDataMBC3, data, sizeof(gbDataMBC3)-sizeof(time_t));
+  else
+    utilReadMem(&gbDataMBC3, data, sizeof(gbDataMBC3));
+  utilReadMem(&gbDataMBC5, data, sizeof(gbDataMBC5));
+  utilReadMem(&gbDataHuC1, data, sizeof(gbDataHuC1));
+  utilReadMem(&gbDataHuC3, data, sizeof(gbDataHuC3));
+  if(version>=11)
+  {
+    utilReadMem(&gbDataTAMA5, data, sizeof(gbDataTAMA5));
+    if(gbTAMA5ram != NULL) {
+#if 0
+      if(skipSaveGameBattery) {
+        utilGzSeek(data, gbTAMA5ramSize, SEEK_CUR);
+      } else {
+#endif
+        utilReadMem(gbTAMA5ram, data, gbTAMA5ramSize);
+#if 0
+      }
+#endif
+    }
+    utilReadMem(&gbDataMMM01, data, sizeof(gbDataMMM01));
+  }
+
+  if(version < GBSAVE_GAME_VERSION_5) {
+    utilReadMem(pix, data, 256*224*sizeof(u16));
+  }
+  memset(pix, 0, 257*226*sizeof(u32));
+
+  if(version < GBSAVE_GAME_VERSION_6) {
+    utilReadMem(gbPalette, data, 64 * sizeof(u16));
+  } else
+    utilReadMem(gbPalette, data, 128 * sizeof(u16));
+
+  if (version < 11)
+    utilReadMem(gbPalette, data, 128 * sizeof(u16));
+
+  if(version < GBSAVE_GAME_VERSION_10) {
+    if(!gbCgbMode && !gbSgbMode) {
+      for(int i = 0; i < 8; i++)
+        gbPalette[i] = systemGbPalette[gbPaletteOption*8+i];
+    }
+  }
+
+  utilReadMem(&gbMemory[0x8000], data, 0x8000);
+
+  if(gbRamSize && gbRam) {
+    if(version < 11)
+#if 0
+      if(skipSaveGameBattery) {
+        utilGzSeek(data, gbRamSize, SEEK_CUR); //skip
+      } else {
+#endif
+        utilReadMem(gbRam, data, gbRamSize); //read
+#if 0
+      }
+#endif
+    else
+    {
+      int ramSize = utilReadIntMem(data);
+#if 0
+      if(skipSaveGameBattery) {
+        utilGzSeek(data, (gbRamSize>ramSize) ? ramSize : gbRamSize, SEEK_CUR); //skip
+      } else {
+#endif
+        utilReadMem(gbRam, data, (gbRamSize>ramSize) ? ramSize : gbRamSize); //read
+#if 0
+      }
+#endif
+      if(ramSize>gbRamSize) {
+        u8* tmp = (u8*)malloc(ramSize-gbRamSize);
+        utilReadMem(tmp, data, ramSize-gbRamSize);
+        free(tmp);
+        //utilGzSeek(data,ramSize-gbRamSize,SEEK_CUR);
+      }
+    }
+  }
+
+  memset(gbSCYLine, register_SCY, sizeof(gbSCYLine));
+  memset(gbSCXLine, register_SCX, sizeof(gbSCXLine));
+  memset(gbBgpLine, (gbBgp[0] | (gbBgp[1]<<2) | (gbBgp[2]<<4) |
+         (gbBgp[3]<<6)), sizeof(gbBgpLine));
+  memset(gbObp0Line, (gbObp0[0] | (gbObp0[1]<<2) | (gbObp0[2]<<4) |
+         (gbObp0[3]<<6)), sizeof(gbObp0Line));
+  memset(gbObp1Line, (gbObp1[0] | (gbObp1[1]<<2) | (gbObp1[2]<<4) |
+         (gbObp1[3]<<6)), sizeof(gbObp1Line));
+  memset(gbSpritesTicks, 0x0, sizeof(gbSpritesTicks));
+
+  if (inBios)
+  {
+    gbMemoryMap[0x00] = &gbMemory[0x0000];
+    if (gbHardware & 5) {
+      memcpy ((u8 *)(gbMemory), (u8 *)(gbRom), 0x1000);
+      memcpy ((u8 *)(gbMemory), (u8 *)(bios), 0x100);
+    } else if (gbHardware & 2) {
+      memcpy ((u8 *)(gbMemory), (u8 *)(bios), 0x900);
+      memcpy ((u8 *)(gbMemory + 0x100), (u8 *)(gbRom + 0x100), 0x100);
+    }
+
+  }
+  else
+    gbMemoryMap[0x00] = &gbRom[0x0000];
+  gbMemoryMap[0x01] = &gbRom[0x1000];
+  gbMemoryMap[0x02] = &gbRom[0x2000];
+  gbMemoryMap[0x03] = &gbRom[0x3000];
+  gbMemoryMap[0x04] = &gbRom[0x4000];
+  gbMemoryMap[0x05] = &gbRom[0x5000];
+  gbMemoryMap[0x06] = &gbRom[0x6000];
+  gbMemoryMap[0x07] = &gbRom[0x7000];
+  gbMemoryMap[0x08] = &gbMemory[0x8000];
+  gbMemoryMap[0x09] = &gbMemory[0x9000];
+  gbMemoryMap[0x0a] = &gbMemory[0xa000];
+  gbMemoryMap[0x0b] = &gbMemory[0xb000];
+  gbMemoryMap[0x0c] = &gbMemory[0xc000];
+  gbMemoryMap[0x0d] = &gbMemory[0xd000];
+  gbMemoryMap[0x0e] = &gbMemory[0xe000];
+  gbMemoryMap[0x0f] = &gbMemory[0xf000];
+
+  switch(gbRomType) {
+  case 0x00:
+  case 0x01:
+  case 0x02:
+  case 0x03:
+    // MBC 1
+    memoryUpdateMapMBC1();
+    break;
+  case 0x05:
+  case 0x06:
+    // MBC2
+    memoryUpdateMapMBC2();
+    break;
+  case 0x0b:
+  case 0x0c:
+  case 0x0d:
+    // MMM01
+    memoryUpdateMapMMM01();
+    break;
+  case 0x0f:
+  case 0x10:
+  case 0x11:
+  case 0x12:
+  case 0x13:
+    // MBC 3
+    memoryUpdateMapMBC3();
+    break;
+  case 0x19:
+  case 0x1a:
+  case 0x1b:
+    // MBC5
+    memoryUpdateMapMBC5();
+    break;
+  case 0x1c:
+  case 0x1d:
+  case 0x1e:
+    // MBC 5 Rumble
+    memoryUpdateMapMBC5();
+    break;
+  case 0x22:
+    // MBC 7
+    memoryUpdateMapMBC7();
+    break;
+  case 0x56:
+    // GS3
+    memoryUpdateMapGS3();
+    break;
+  case 0xfd:
+    // TAMA5
+    memoryUpdateMapTAMA5();
+    break;
+  case 0xfe:
+    // HuC3
+    memoryUpdateMapHuC3();
+    break;
+  case 0xff:
+    // HuC1
+    memoryUpdateMapHuC1();
+    break;
+  }
+
+  if(gbCgbMode) {
+    utilReadMem(gbVram, data, 0x4000);
+    utilReadMem(gbWram, data, 0x8000);
+
+    int value = register_SVBK;
+    if(value == 0)
+      value = 1;
+
+    gbMemoryMap[0x08] = &gbVram[register_VBK * 0x2000];
+    gbMemoryMap[0x09] = &gbVram[register_VBK * 0x2000 + 0x1000];
+    gbMemoryMap[0x0d] = &gbWram[value * 0x1000];
+  }
+
+  gbSoundReadGame(version, data);
+
+  if (gbCgbMode && gbSgbMode) {
+    gbSgbMode = 0;
+  }
+
+  if(gbBorderOn && !gbSgbMask) {
+    gbSgbRenderBorder();
+  }
+
+  systemDrawScreen();
+
+  if(version > GBSAVE_GAME_VERSION_1)
+  {
+#if 0
+    if( skipSaveGameCheats ) {
+      gbCheatsReadGameSkip(data, version);
+    } else {
+      gbCheatsReadGame(data, version);
+    }
+#endif
+  }
+
+  if (version<11)
+  {
+    gbWriteMemory(0xff00, 0);
+    gbMemory[0xff04] = register_DIV;
+    gbMemory[0xff05] = register_TIMA;
+    gbMemory[0xff06] = register_TMA;
+    gbMemory[0xff07] = register_TAC;
+    gbMemory[0xff40] = register_LCDC;
+    gbMemory[0xff42] = register_SCY;
+    gbMemory[0xff43] = register_SCX;
+    gbMemory[0xff44] = register_LY;
+    gbMemory[0xff45] = register_LYC;
+    gbMemory[0xff46] = register_DMA;
+    gbMemory[0xff4a] = register_WY;
+    gbMemory[0xff4b] = register_WX;
+    gbMemory[0xff4f] = register_VBK;
+    gbMemory[0xff51] = register_HDMA1;
+    gbMemory[0xff52] = register_HDMA2;
+    gbMemory[0xff53] = register_HDMA3;
+    gbMemory[0xff54] = register_HDMA4;
+    gbMemory[0xff55] = register_HDMA5;
+    gbMemory[0xff70] = register_SVBK;
+    gbMemory[0xffff] = register_IE;
+    GBDIV_CLOCK_TICKS = 64;
+
+    if (gbSpeed)
+      gbDivTicks /=2;
+
+    if ((gbLcdMode == 0) && (register_STAT & 8))
+      gbInt48Signal |= 1;
+    if ((gbLcdMode == 1) && (register_STAT & 0x10))
+      gbInt48Signal |= 2;
+    if ((gbLcdMode == 2) && (register_STAT & 0x20))
+      gbInt48Signal |= 4;
+    if ((register_LY==register_LYC) && (register_STAT & 0x40))
+      gbInt48Signal |= 8;
+
+      gbLcdLYIncrementTicks = GBLY_INCREMENT_CLOCK_TICKS;
+
+      if (gbLcdMode == 2)
+        gbLcdLYIncrementTicks-=GBLCD_MODE_2_CLOCK_TICKS-gbLcdTicks;
+      else if (gbLcdMode == 3)
+        gbLcdLYIncrementTicks -=GBLCD_MODE_2_CLOCK_TICKS+GBLCD_MODE_3_CLOCK_TICKS-gbLcdTicks;
+      else if (gbLcdMode == 0)
+        gbLcdLYIncrementTicks =gbLcdTicks;
+      else if (gbLcdMode == 1)
+      {
+         gbLcdLYIncrementTicks = gbLcdTicks % GBLY_INCREMENT_CLOCK_TICKS;
+         if (register_LY == 0x99)
+            gbLcdLYIncrementTicks =gbLine99Ticks;
+         else if (register_LY == 0)
+            gbLcdLYIncrementTicks += GBLY_INCREMENT_CLOCK_TICKS;
+      }
+
+    gbLcdModeDelayed = gbLcdMode;
+    gbLcdTicksDelayed = gbLcdTicks--;
+    gbLcdLYIncrementTicksDelayed = gbLcdLYIncrementTicks--;
+    gbInterruptWait = 0;
+    memset(gbSpritesTicks,0,sizeof(gbSpritesTicks));
+  }
+  else
+  {
+    gbLcdModeDelayed = utilReadIntMem(data);
+    gbLcdTicksDelayed = utilReadIntMem(data);
+    gbLcdLYIncrementTicksDelayed = utilReadIntMem(data);
+    gbSpritesTicks[299] = utilReadIntMem(data) & 0xff;
+    gbTimerModeChange = (utilReadIntMem(data) ? true : false);
+    gbTimerOnChange = (utilReadIntMem(data) ? true : false);
+    gbHardware = utilReadIntMem(data);
+    gbBlackScreen = (utilReadIntMem(data) ? true : false);
+    oldRegister_WY = utilReadIntMem(data);
+    gbWindowLine = utilReadIntMem(data);
+    inUseRegister_WY = utilReadIntMem(data);
+    gbScreenOn = (utilReadIntMem(data) ? true : false);
+  }
+
+  if (gbSpeed)
+    gbLine99Ticks *= 2;
+
+  systemSaveUpdateCounter = SYSTEM_SAVE_NOT_UPDATED;
+
+  if ( version >= 12 && utilReadIntMem( data ) != 0x12345678 )
+    assert( false ); // fails if something read too much/little from file
+
+  return true;
+}
+unsigned int gbWriteSaveState(u8 *data, unsigned int size) {
+  uint8_t *orig = data;
+
+  utilWriteIntMem(data, GBSAVE_GAME_VERSION);
+
+  utilWriteMem(data, &gbRom[0x134], 15);
+
+  utilWriteIntMem(data, useBios);
+  utilWriteIntMem(data, inBios);
+
+  utilWriteDataMem(data, gbSaveGameStruct);
+
+  utilWriteMem(data, &IFF, 2);
+
+  if(gbSgbMode) {
+    gbSgbSaveGame(data);
+  }
+
+  utilWriteMem(data, &gbDataMBC1, sizeof(gbDataMBC1));
+  utilWriteMem(data, &gbDataMBC2, sizeof(gbDataMBC2));
+  utilWriteMem(data, &gbDataMBC3, sizeof(gbDataMBC3));
+  utilWriteMem(data, &gbDataMBC5, sizeof(gbDataMBC5));
+  utilWriteMem(data, &gbDataHuC1, sizeof(gbDataHuC1));
+  utilWriteMem(data, &gbDataHuC3, sizeof(gbDataHuC3));
+  utilWriteMem(data, &gbDataTAMA5, sizeof(gbDataTAMA5));
+  if (gbTAMA5ram != NULL)
+    utilWriteMem(data, gbTAMA5ram, gbTAMA5ramSize);
+  utilWriteMem(data, &gbDataMMM01, sizeof(gbDataMMM01));
+
+  utilWriteMem(data, gbPalette, 128 * sizeof(u16));
+
+  utilWriteMem(data, &gbMemory[0x8000], 0x8000);
+
+  if(gbRamSize && gbRam) {
+    utilWriteIntMem(data, gbRamSize);
+    utilWriteMem(data, gbRam, gbRamSize);
+  }
+
+  if(gbCgbMode) {
+    utilWriteMem(data, gbVram, 0x4000);
+    utilWriteMem(data, gbWram, 0x8000);
+  }
+
+  gbSoundSaveGame(data);
+
+  //gbCheatsSaveGame(data);
+
+  utilWriteIntMem(data, gbLcdModeDelayed);
+  utilWriteIntMem(data, gbLcdTicksDelayed);
+  utilWriteIntMem(data, gbLcdLYIncrementTicksDelayed);
+  utilWriteIntMem(data, gbSpritesTicks[299]);
+  utilWriteIntMem(data, gbTimerModeChange);
+  utilWriteIntMem(data, gbTimerOnChange);
+  utilWriteIntMem(data, gbHardware);
+  utilWriteIntMem(data, gbBlackScreen);
+  utilWriteIntMem(data, oldRegister_WY);
+  utilWriteIntMem(data, gbWindowLine);
+  utilWriteIntMem(data, inUseRegister_WY);
+  utilWriteIntMem(data, gbScreenOn);
+  utilWriteIntMem(data, 0x12345678); // end marker
+
+  return (ptrdiff_t)data - (ptrdiff_t)orig;
+}
+
+#if 0
+bool gbReadGSASnapshot(const char *fileName)
+{
+  FILE *file = fopen(fileName, "rb");
+
+  if(!file) {
+    systemMessage(MSG_CANNOT_OPEN_FILE, N_("Cannot open file %s"), fileName);
+    return false;
+  }
+
+  fseek(file, 0x4, SEEK_SET);
+  char buffer[16];
+  char buffer2[16];
+  fread(buffer, 1, 15, file);
+  buffer[15] = 0;
+  memcpy(buffer2, &gbRom[0x134], 15);
+  buffer2[15] = 0;
+  if(memcmp(buffer, buffer2, 15)) {
+    systemMessage(MSG_CANNOT_IMPORT_SNAPSHOT_FOR,
+                  N_("Cannot import snapshot for %s. Current game is %s"),
+                  buffer,
+                  buffer2);
+    fclose(file);
+    return false;
+  }
+  fseek(file, 0x13, SEEK_SET);
+  size_t read = 0;
+  int toRead = 0;
+  switch(gbRomType) {
+  case 0x03:
+  case 0x0f:
+  case 0x10:
+  case 0x13:
+  case 0x1b:
+  case 0x1e:
+  case 0xff:
+    read = fread(gbRam, 1, (gbRamSizeMask+1), file);
+    toRead = (gbRamSizeMask+1);
+    break;
+  case 0x06:
+  case 0x22:
+    read = fread(&gbMemory[0xa000],1,256,file);
+    toRead = 256;
+    break;
+  default:
+    systemMessage(MSG_UNSUPPORTED_SNAPSHOT_FILE,
+                  N_("Unsupported snapshot file %s"),
+                  fileName);
+    fclose(file);
+    return false;
+  }
+  fclose(file);
+  gbReset();
+  return true;
+}
 
 static bool gbWriteSaveState(gzFile gzFile)
 {
@@ -4879,7 +5337,7 @@ void gbEmulate(int ticksToStop) {
 
   clockTicks = 0;
   gbDmaTicks = 0;
- 
+
   int opcode = 0;
 
   int opcode1 = 0;
@@ -5650,7 +6108,7 @@ void gbEmulate(int ticksToStop) {
 										dat = gbLinkUpdate(gbMemory[0xff01], gbSerialOn);
 									}
 									gbMemory[0xff01] = (dat >> 8);
-								} //else 
+								} //else
 							gbSerialTicks = 0;
 							if ((dat & 1) && (gbMemory[0xff02] & 0x80)) //(dat & 1)==1 when reply data received
 							{
@@ -5857,9 +6315,9 @@ struct EmulatedSystem GBSystem = {
   // emuWriteBattery
   gbWriteBatteryFile,
   // emuReadState
-    NULL,  // gbReadSaveState,
+  gbReadSaveState,
   // emuWriteState
-    NULL,  // gbWriteSaveState,
+  gbWriteSaveState,
   // emuReadMemState
     NULL,  // gbReadMemSaveState,
   // emuWriteMemState

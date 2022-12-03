@@ -216,7 +216,7 @@ void gbSgbDrawBorderTile(int x, int y, int tile, int attr)
     u8 b = *tileAddress++;
     u8 c = *tileAddress2++;
     u8 d = *tileAddress2++;
- 
+
     u8 yyy;
     if(!flipY)
       yyy = yy;
@@ -868,6 +868,44 @@ variable_desc gbSgbSaveStructV3[] = {
   { &gbSgbFourPlayers, sizeof(int) },
   { NULL, 0 }
 };
+
+
+void gbSgbSaveGame(uint8_t *& data)
+{
+  utilWriteDataMem(data, gbSgbSaveStructV3);
+
+  utilWriteMem(data, gbSgbBorder, 2048);
+  utilWriteMem(data, gbSgbBorderChar, 32*256);
+
+  utilWriteMem(data, gbSgbPacket, 16*7);
+
+  utilWriteMem(data, gbSgbSCPPalette, 4 * 512 * sizeof(u16));
+  utilWriteMem(data, gbSgbATF, 20 * 18);
+  utilWriteMem(data, gbSgbATFList, 45 * 20 * 18);
+}
+
+
+void gbSgbReadGame(const uint8_t *& data, int version)
+{
+  if(version >= 3)
+    utilReadDataMem(data, gbSgbSaveStructV3);
+  else {
+    utilReadDataMem(data, gbSgbSaveStruct);
+    gbSgbFourPlayers = 0;
+  }
+
+  if(version >= 8) {
+    utilReadMem(gbSgbBorder, data, 2048);
+    utilReadMem(gbSgbBorderChar, data, 32*256);
+  }
+
+  utilReadMem(gbSgbPacket, data, 16*7);
+
+  utilReadMem(gbSgbSCPPalette, data, 4 * 512 * sizeof(u16));
+  utilReadMem(gbSgbATF, data, 20 * 18);
+  utilReadMem(gbSgbATFList, data,  45 * 20 * 18);
+}
+
 
 #if 0
 void gbSgbSaveGame(gzFile gzFile)

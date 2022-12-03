@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <cstddef>
+#include <stdlib.h>
 #import "../System.h"
 #import "../Util.h"
 #import "../common/ConfigManager.h"
@@ -621,5 +622,40 @@ ENTRY_FN VBA_emuWriteBattery() {
 
 ENTRY_FN VBA_agbPrintFlush() {
     agbPrintFlush();
+    return 1;
+};
+
+
+#define MAX_STATE_SIZE 2 * 1024 * 1024
+
+ENTRY_FN VBA_emuWriteState() {
+    u8* state;
+    state = (u8*)malloc(MAX_STATE_SIZE * sizeof(u8));
+
+    int stateSize = emulator.emuWriteState(state, MAX_STATE_SIZE);
+    printf("### VBA_emuWriteState, size=%d\n", stateSize);
+
+    FILE* f = fopen("/state.out", "wb");
+    fwrite(state, sizeof(u8), stateSize, f);
+    fclose(f);
+
+    free(state);
+    return 1;
+};
+
+ENTRY_FN VBA_emuReadState() {
+    FILE* f = fopen("/state.out", "rb");
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        unsigned len = ftell(f);
+        rewind(f);
+
+        u8* state = (u8*)malloc(len * sizeof(u8));
+        fread(state, len, 1, f); // Read in the entire file
+        fclose(f);
+
+        emulator.emuReadState(state, len);
+        free(state);
+    }
     return 1;
 };

@@ -1,20 +1,20 @@
 (function () {
     "use strict";
-    
-    
+
+
     var files = [
         // Real Entry Point
         "./src/emscripten/VBA.cpp",
-        
+
         // Driver classes
         "./src/emscripten/EmscriptenSoundDriver.cpp",
-        
+
         // Util
         "./src/Util.cpp",
-        
+
         // Settings File
         "./src/common/ConfigManager.cpp",
-        
+
         // APU files
         "./src/apu/Blip_Buffer.cpp",
         "./src/apu/Effects_Buffer.cpp",
@@ -22,7 +22,7 @@
         "./src/apu/Gb_Apu_State.cpp",
         "./src/apu/Gb_Oscs.cpp",
         "./src/apu/Multi_Buffer.cpp",
-        
+
         // GBA Files
         "./src/gba/bios.cpp",
         "./src/gba/EEprom.cpp",
@@ -53,11 +53,14 @@
         "./src/gb/gbGlobals.cpp",
         "./src/gb/gbSound.cpp",
         "./src/gb/gbMemory.cpp",
-        "./src/gb/gbSGB.cpp",        
+        "./src/gb/gbSGB.cpp",
+
+        // Libretro Files
+        "./src/libretro/UtilRetro.cpp",
     ];
-    
+
     var opt = require("yargs").argv.opt;
-    
+
     var MB = Math.pow(2, 20);
 
     var options = [
@@ -81,7 +84,7 @@
         "-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS']",
         "-s TOTAL_MEMORY=" + (80 * MB),
     ].filter(function (v) {return v;}).join(" ");
-    
+
     function fix (file) {
         let str = require("fs").readFileSync(file).toString()
                     .replace(/require\(\"fs\"\)/g, "(function () { throw new Error('cant use fs in browser')}())");
@@ -92,6 +95,6 @@
     console.log(command);
     require("child_process").execSync(command);
     fix("./build/emu.js");
-    
+
 }());
 

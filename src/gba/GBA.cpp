@@ -1305,7 +1305,7 @@ bool CPUReadBatteryFile(const char *fileName)
 //
 //  long size = ftell(file);
 //  fseek(file, 0, SEEK_SET);
-    
+
   long size = EM_ASM_INT({return window["VBAInterface"]["getSaveSize"]()}, 0);
   systemSaveUpdateCounter = SYSTEM_SAVE_NOT_UPDATED;
 
@@ -1683,13 +1683,13 @@ int CPULoadRomData(const char *data, int size)
   }
 
   u8 *whereToLoad = cpuIsMultiBoot ? workRAM : rom;
-  
+
   romSize = size % 2 == 0 ? size : size + 1;
   //memcpy(whereToLoad, data, size);
-  
+
   // Custom loading code
   EM_ASM_INT({return window["VBAInterface"]["copyRomToMemory"]($0);}, (int) whereToLoad);
-    
+
   u16 *temp = (u16 *)(rom+((romSize+1)&~1));
   int i;
   for(i = (romSize+1)&~1; i < 0x2000000; i+=2) {
@@ -3427,8 +3427,8 @@ void CPUInit(const char *biosFileName, bool useBiosFile)
     memcpy(bios, myROM, sizeof(myROM));
   }
 
-  
-  
+
+
   int i = 0;
 
   biosProtected[0] = 0x00;
@@ -4631,9 +4631,9 @@ struct EmulatedSystem GBASystem = {
   // emuWriteBattery
   CPUWriteBatteryFile,
   // emuReadState
-  NULL,//CPUReadState,
+  CPUReadState,
   // emuWriteState
-  NULL,//CPUWriteState,
+  CPUWriteState,
   // emuReadMemState
 //#ifdef __LIBRETRO__
 //  NULL,

@@ -34,9 +34,13 @@ void gbCPUInit(const char *,bool);
 bool gbWriteBatteryFile(const char *);
 bool gbWriteBatteryFile(const char *, bool);
 bool gbReadBatteryFile(const char *);
-bool gbWriteSaveState(const char *);
+
+bool gbReadSaveState(const u8*, unsigned);
+unsigned int gbWriteSaveState(u8 *data, unsigned int size);
+
+//bool gbWriteSaveState(const char *);
 bool gbWriteMemSaveState(char *, int, long&);
-bool gbReadSaveState(const char *);
+//bool gbReadSaveState(const char *);
 bool gbReadMemSaveState(char *, int);
 void gbSgbRenderBorder();
 bool gbWritePNGFile(const char *);

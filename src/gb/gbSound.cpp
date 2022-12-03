@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include "../gba/Sound.h"
 #include "../Util.h"
@@ -135,7 +136,7 @@ static void remake_stereo_buffer()
 	stereo_buffer = new Simple_Effects_Buffer; // TODO: handle out of memory
 	if ( stereo_buffer->set_sample_rate( soundSampleRate ) ) { } // TODO: handle out of memory
 	stereo_buffer->clock_rate( gb_apu->clock_rate );
-	
+
 	// Multi_Buffer
 	static int const chan_types [chan_count] = {
 		Multi_Buffer::wave_type+1, Multi_Buffer::wave_type+2,
@@ -418,6 +419,36 @@ static variable_desc gb_state [] =
 
 	{ NULL, 0 }
 };
+
+void gbSoundSaveGame(uint8_t *& data)
+{
+	gb_apu->save_state( &state.apu );
+
+	// Be sure areas for expansion get written as zero
+	memset( dummy_state, 0, sizeof dummy_state );
+
+	state.version = 1;
+
+	utilWriteDataMem( data, gb_state );
+}
+
+
+void gbSoundReadGame( int version, const uint8_t *& data )
+{
+	// Prepare APU and default state
+	reset_apu();
+	gb_apu->save_state( &state.apu );
+#if 0
+	if ( version > 11 )
+#endif
+		utilReadDataMem( data, gb_state );
+#if 0
+	else
+		gbSoundReadGameOld( version, in );
+#endif
+	gb_apu->load_state( state.apu );
+}
+
 
 #if 0
 void gbSoundSaveGame( gzFile out )
